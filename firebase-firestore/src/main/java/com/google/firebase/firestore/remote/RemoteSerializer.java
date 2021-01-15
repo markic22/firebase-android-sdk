@@ -495,7 +495,12 @@ public final class RemoteSerializer {
     }
 
     builder.setTargetId(targetData.getTargetId());
-    builder.setResumeToken(targetData.getResumeToken());
+
+    if (!targetData.getResumeToken().isEmpty()) {
+      builder.setResumeToken(targetData.getResumeToken());
+    } else if (!targetData.getSnapshotVersion().equals(SnapshotVersion.NONE)) {
+      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+    }
 
     return builder.build();
   }

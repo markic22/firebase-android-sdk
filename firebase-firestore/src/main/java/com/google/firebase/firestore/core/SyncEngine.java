@@ -24,7 +24,13 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.LoadBundleTaskProgress;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleElement;
+import com.google.firebase.firestore.bundle.BundleLoader;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -505,6 +511,49 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
 
     pendingWritesCallbacks.clear();
+  }
+
+  public void loadBundle(BundleReader bundleReader, LoadBundleTask resultTask) {
+    try {
+      BundleMetadata bundleMetadata = bundleReader.getBundleMetadata();
+      boolean hasNewerBundle = localStore.hasNewerBundle(bundleMetadata);
+      if (hasNewerBundle) {
+        bundleReader.close();
+        resultTask.setResult(LoadBundleTaskProgress.createSuccess(bundleMetadata));
+      }
+
+      resultTask.updateProgress(LoadBundleTaskProgress.createInitialProgress(bundleMetadata));
+
+      BundleLoader bundleLoader = new BundleLoader(localStore, bundleMetadata);
+
+      long bytesRead = 0;
+      BundleElement bundleElement;
+      while ((bundleElement = bundleReader.getNextElement()) != null) {
+        long oldBytesRead = bytesRead;
+        bytesRead = bundleReader.getBytesRead();
+        @Nullable
+        LoadBundleTaskProgress progress =
+            bundleLoader.addElement(bundleElement, bytesRead - oldBytesRead);
+        if (progress != null) {
+          resultTask.updateProgress(progress);
+        }
+      }
+
+      LoadBundleTaskProgress result = bundleLoader.applyChanges();
+
+      // TODO(b/160876443): This currently raises snapshots with `fromCache=false` if users already
+      // listen to some queries and bundles has newer version.
+      emitNewSnapsAndNotifyLocalStore(bundleLoader.getChangedDocuments(), /* remoteEvent= */ null);
+
+      // Save metadata, so loading the same bundle will skip.
+      localStore.saveBundle(bundleMetadata);
+      resultTask.setResult(result);
+    } catch (Exception e) {
+      Logger.warn("Firestore", "Loading bundle failed : %s", e);
+      resultTask.setException(
+          new FirebaseFirestoreException(
+              "Bundle failed to load", FirebaseFirestoreException.Code.INVALID_ARGUMENT, e));
+    }
   }
 
   /** Resolves the task corresponding to this write result. */

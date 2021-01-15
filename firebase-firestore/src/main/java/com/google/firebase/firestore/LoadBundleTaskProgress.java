@@ -16,11 +16,20 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.bundle.BundleMetadata;
 
 /** Represents a progress update or a final state from loading bundles. */
-/* package */ final class LoadBundleTaskProgress {
+/* package */ public final class LoadBundleTaskProgress {
   static final LoadBundleTaskProgress INITIAL =
       new LoadBundleTaskProgress(0, 0, 0, 0, null, TaskState.SUCCESS);
+
+  public static LoadBundleTaskProgress createSuccess(BundleMetadata bundleMetadata) {
+    return null;
+  }
+
+  public static LoadBundleTaskProgress createInitialProgress(BundleMetadata bundleMetadata) {
+    return null;
+  }
 
   /**
    * Represents the state of bundle loading tasks.

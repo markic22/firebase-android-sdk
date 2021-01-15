@@ -20,6 +20,10 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.BundleSerializer;
+import com.google.firebase.firestore.bundle.BundledDocumentMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -42,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -627,7 +632,8 @@ public class BundleSerializerTest {
     BundleMetadata expectedMetadata =
         new BundleMetadata(
             "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)), 4, 5);
-    BundleMetadata actualMetadata = serializer.decodeBundleMetadata(json);
+    JSONObject object = new JSONObject(json);
+    BundleMetadata actualMetadata = serializer.decodeBundleMetadata(object, json.length());
     assertEquals(expectedMetadata, actualMetadata);
   }
 
@@ -650,7 +656,9 @@ public class BundleSerializerTest {
             new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)),
             true,
             Arrays.asList("query-1", "query-2"));
-    BundledDocumentMetadata actualMetadata = serializer.decodeBundledDocumentMetadata(json);
+    JSONObject object = new JSONObject(json);
+    BundledDocumentMetadata actualMetadata =
+        serializer.decodeBundledDocumentMetadata(object, json.length());
     assertEquals(expectedMetadata, actualMetadata);
   }
 
@@ -668,7 +676,7 @@ public class BundleSerializerTest {
             + "  crateTime: { seconds: 1, nanos: 2 },\n"
             + "  updateTime: { seconds: 3, nanos: 4 }\n"
             + "}";
-    Document actualDocument = serializer.decodeDocument(documentJson);
+    Document actualDocument = serializer.decodeDocument(documentJson, json.length());
     Document expectedDocument =
         new Document(
             DocumentKey.fromName(TEST_DOCUMENT),
@@ -700,7 +708,8 @@ public class BundleSerializerTest {
             + "   },\n"
             + " readTime: { seconds: 1, nanos: 2 }\n"
             + "}";
-    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(queryJson);
+    JSONObject JSONObject = new JSONObject(queryJson);
+    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(JSONObject, json.length());
     NamedQuery expectedNamedQuery =
         new NamedQuery(
             "query-1", query, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));

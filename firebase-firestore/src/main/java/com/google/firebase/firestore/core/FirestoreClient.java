@@ -25,8 +25,10 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
@@ -43,6 +45,7 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -260,8 +263,24 @@ public final class FirestoreClient {
   }
 
   public void addSnapshotsInSyncListener(EventListener<Void> listener) {
-    verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+  }
+
+  public void loadBundle(InputStream bundleData, LoadBundleTask resultTask) {
+    verifyNotTerminated();
+    BundleReader bundleReader = new BundleReader(bundleData);
+    asyncQueue.enqueueAndForget(() -> syncEngine.loadBundle(bundleReader, resultTask));
+  }
+
+  public Task<Query> getNamedQuery(String queryName) {
+    verifyNotTerminated();
+    TaskCompletionSource<Query> completionSource = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () -> {
+          Query query = localStore.getNamedQuery(queryName);
+          completionSource.setResult(query);
+        });
+    return completionSource.getTask();
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

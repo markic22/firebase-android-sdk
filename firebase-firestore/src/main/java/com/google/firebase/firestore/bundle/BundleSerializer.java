@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import android.util.Base64;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -53,19 +52,11 @@ class BundleSerializer {
     this.remoteSerializer = remoteSerializer;
   }
 
-  public NamedQuery decodeNamedQuery(String json) throws JSONException {
-    return decodeNamedQuery(new JSONObject(json));
-  }
-
   public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
     String name = namedQuery.getString("name");
     Query query = decodeQuery(namedQuery.getJSONObject("bundledQuery"));
     SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getJSONObject("readTime"));
     return new NamedQuery(name, query, readTime);
-  }
-
-  public BundleMetadata decodeBundleMetadata(String json) throws JSONException {
-    return decodeBundleMetadata(new JSONObject(json));
   }
 
   public BundleMetadata decodeBundleMetadata(JSONObject bundleMetadata) throws JSONException {
@@ -75,10 +66,6 @@ class BundleSerializer {
     int totalDocuments = bundleMetadata.getInt("totalDocuments");
     long totalBytes = bundleMetadata.getLong("totalBytes");
     return new BundleMetadata(bundleId, version, createTime, totalDocuments, totalBytes);
-  }
-
-  public BundledDocumentMetadata decodeBundledDocumentMetadata(String json) throws JSONException {
-    return decodeBundledDocumentMetadata(new JSONObject(json));
   }
 
   public BundledDocumentMetadata decodeBundledDocumentMetadata(JSONObject bundledDocumentMetadata)
@@ -99,12 +86,7 @@ class BundleSerializer {
     return new BundledDocumentMetadata(key, readTime, exists, queries);
   }
 
-  @VisibleForTesting
-  Document decodeDocument(String json) throws JSONException {
-    return decodeDocument(new JSONObject(json));
-  }
-
-  Document decodeDocument(JSONObject document) throws JSONException {
+  public BundleDocument decodeDocument(JSONObject document) throws JSONException {
     String name = document.getString("name");
     DocumentKey key = DocumentKey.fromPath(decodeName(name));
     SnapshotVersion updateTime = decodeSnapshotVersion(document.getJSONObject("updateTime"));
@@ -112,11 +94,13 @@ class BundleSerializer {
     Value.Builder value = Value.newBuilder();
     decodeMapValue(value, document.getJSONObject("fields"));
 
-    return new Document(
+    return new BundleDocument(
         key,
-        updateTime,
-        ObjectValue.fromMap(value.getMapValue().getFieldsMap()),
-        Document.DocumentState.SYNCED);
+        new Document(
+            key,
+            updateTime,
+            ObjectValue.fromMap(value.getMapValue().getFieldsMap()),
+            Document.DocumentState.SYNCED));
   }
 
   private ResourcePath decodeName(String name) {
@@ -136,9 +120,10 @@ class BundleSerializer {
 
   private Query decodeQuery(JSONObject bundledQuery) throws JSONException {
     JSONObject structuredQuery = bundledQuery.getJSONObject("structuredQuery");
-    verifyNoSelect(structuredQuery);
 
     ResourcePath parent = decodeName(bundledQuery.getString("parent"));
+    verifyNoSelect(structuredQuery);
+
     JSONArray from = structuredQuery.getJSONArray("from");
     verifyCollectionSelector(from);
     JSONObject collectionSelector = from.getJSONObject(0);

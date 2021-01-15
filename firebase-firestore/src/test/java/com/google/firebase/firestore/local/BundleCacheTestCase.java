@@ -19,6 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;

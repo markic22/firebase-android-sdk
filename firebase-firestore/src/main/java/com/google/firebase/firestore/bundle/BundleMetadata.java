@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
-/* package */ class BundleMetadata {
+/* package */ public class BundleMetadata extends BundleElement {
   private final String bundleId;
   private final int version;
   private final SnapshotVersion createTime;
@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
       SnapshotVersion createTime,
       int totalDocuments,
       long totalBytes) {
+    super();
     this.bundleId = bundleId;
     this.version = version;
     this.createTime = createTime;

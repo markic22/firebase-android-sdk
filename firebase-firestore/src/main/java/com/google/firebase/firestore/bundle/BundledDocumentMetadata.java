@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.List;
 
 /** Metadata describing a Firestore document saved in the bundle. */
-public class BundledDocumentMetadata {
+public class BundledDocumentMetadata extends BundleElement {
   private final DocumentKey key;
   private final SnapshotVersion readTime;
   private final boolean exists;
@@ -27,6 +27,7 @@ public class BundledDocumentMetadata {
 
   public BundledDocumentMetadata(
       DocumentKey key, SnapshotVersion readTime, boolean exists, List<String> queries) {
+    super();
     this.key = key;
     this.readTime = readTime;
     this.exists = exists;
@@ -44,7 +45,7 @@ public class BundledDocumentMetadata {
   }
 
   /** Returns whether the document exists. */
-  public boolean isExists() {
+  public boolean exists() {
     return exists;
   }
 
